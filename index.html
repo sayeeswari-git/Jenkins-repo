@@ -1,0 +1,490 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Mindblowing UI — Single File</title>
+
+  <style>
+    :root{
+      --bg:#070a13;
+      --glass: rgba(255,255,255,.08);
+      --stroke: rgba(255,255,255,.14);
+      --text: #eaf0ff;
+      --muted:#a6b0d0;
+      --a:#63f3ff;
+      --b:#a78bfa;
+      --c:#ff5bd6;
+      --shadow: 0 18px 60px rgba(0,0,0,.45);
+      --r: 18px;
+    }
+
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial;
+      color:var(--text);
+      background: var(--bg);
+      overflow-x:hidden;
+    }
+
+    /* Animated Aurora background */
+    .aurora{
+      position:fixed;
+      inset:-30vh -30vw;
+      z-index:-3;
+      filter: blur(40px) saturate(1.2);
+      opacity:.9;
+      background:
+        radial-gradient(40vw 30vw at 20% 20%, rgba(99,243,255,.35), transparent 60%),
+        radial-gradient(40vw 30vw at 80% 20%, rgba(167,139,250,.35), transparent 60%),
+        radial-gradient(45vw 35vw at 30% 80%, rgba(255,91,214,.30), transparent 60%),
+        radial-gradient(50vw 40vw at 80% 80%, rgba(99,243,255,.22), transparent 60%);
+      animation: float 10s ease-in-out infinite alternate;
+    }
+    @keyframes float{
+      from{ transform: translate3d(-2vw,-2vh,0) scale(1.05) rotate(-2deg); }
+      to{ transform: translate3d(2vw,2vh,0) scale(1.08) rotate(2deg); }
+    }
+
+    /* Subtle noise overlay */
+    .noise{
+      position:fixed; inset:0;
+      z-index:-2;
+      pointer-events:none;
+      opacity:.11;
+      background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)' opacity='.4'/%3E%3C/svg%3E");
+      mix-blend-mode: overlay;
+    }
+
+    /* Particle canvas behind content */
+    canvas#particles{
+      position:fixed; inset:0;
+      z-index:-1;
+      opacity:.85;
+    }
+
+    /* Layout */
+    .wrap{
+      width:min(1100px, 92vw);
+      margin: 28px auto 70px;
+      display:grid;
+      gap:16px;
+    }
+
+    header{
+      position:relative;
+      padding:22px 22px 18px;
+      border-radius: calc(var(--r) + 6px);
+      background: linear-gradient(180deg, rgba(255,255,255,.10), rgba(255,255,255,.04));
+      border: 1px solid var(--stroke);
+      box-shadow: var(--shadow);
+      overflow:hidden;
+    }
+
+    /* Neon border glow */
+    header::before{
+      content:"";
+      position:absolute; inset:-2px;
+      background: conic-gradient(from 120deg, rgba(99,243,255,.5), rgba(167,139,250,.5), rgba(255,91,214,.5), rgba(99,243,255,.5));
+      filter: blur(18px);
+      opacity:.55;
+      z-index:-1;
+    }
+
+    .top{
+      display:flex; align-items:center; justify-content:space-between;
+      gap:14px; flex-wrap:wrap;
+    }
+
+    .badge{
+      display:inline-flex; align-items:center; gap:8px;
+      padding:7px 12px;
+      border-radius:999px;
+      background: rgba(255,255,255,.07);
+      border:1px solid rgba(255,255,255,.15);
+      font-size:12px;
+      color: var(--muted);
+      backdrop-filter: blur(10px);
+    }
+    .dot{
+      width:9px; height:9px; border-radius:999px;
+      background: linear-gradient(90deg, var(--a), var(--c));
+      box-shadow: 0 0 0 4px rgba(99,243,255,.12);
+    }
+
+    h1{
+      margin:14px 0 8px;
+      font-size: clamp(26px, 3.5vw, 44px);
+      letter-spacing:.2px;
+      line-height:1.05;
+    }
+    .sub{
+      margin:0;
+      color: var(--muted);
+      font-size: 14px;
+      line-height:1.6;
+      max-width: 70ch;
+    }
+
+    /* Typewriter highlight */
+    .type{
+      display:inline-block;
+      background: linear-gradient(90deg, rgba(99,243,255,.25), rgba(167,139,250,.25));
+      padding: 0 .35em;
+      border-radius: 10px;
+      border:1px solid rgba(255,255,255,.12);
+    }
+
+    /* Magnetic button */
+    .actions{
+      margin-top:16px;
+      display:flex; gap:12px; flex-wrap:wrap;
+      align-items:center;
+    }
+    .btn{
+      position:relative;
+      border:none;
+      cursor:pointer;
+      font-weight:700;
+      letter-spacing:.2px;
+      padding: 12px 16px;
+      border-radius: 14px;
+      color: #06101c;
+      background: linear-gradient(135deg, var(--a), var(--b), var(--c));
+      box-shadow: 0 14px 35px rgba(99,243,255,.18);
+      transform: translateZ(0);
+      transition: transform .15s ease;
+      user-select:none;
+    }
+    .btn:active{ transform: translateY(1px) scale(.99); }
+    .btn.secondary{
+      color: var(--text);
+      background: rgba(255,255,255,.08);
+      border:1px solid rgba(255,255,255,.16);
+      box-shadow:none;
+      backdrop-filter: blur(12px);
+    }
+    .btn .shine{
+      position:absolute; inset:0;
+      border-radius:inherit;
+      background: radial-gradient(120px 70px at var(--mx,50%) var(--my,50%), rgba(255,255,255,.45), transparent 60%);
+      opacity:.0;
+      transition: opacity .15s ease;
+      pointer-events:none;
+    }
+    .btn:hover .shine{ opacity:.45; }
+
+    /* Cards */
+    .grid{
+      display:grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap:14px;
+    }
+    .card{
+      position:relative;
+      padding:16px;
+      border-radius: var(--r);
+      border:1px solid rgba(255,255,255,.14);
+      background: rgba(255,255,255,.06);
+      backdrop-filter: blur(12px);
+      box-shadow: 0 18px 50px rgba(0,0,0,.25);
+      transform-style: preserve-3d;
+      will-change: transform;
+      overflow:hidden;
+      min-height: 150px;
+    }
+    .card::before{
+      content:"";
+      position:absolute; inset:-50px;
+      background:
+        radial-gradient(circle at 20% 20%, rgba(99,243,255,.18), transparent 55%),
+        radial-gradient(circle at 80% 10%, rgba(167,139,250,.16), transparent 55%),
+        radial-gradient(circle at 70% 80%, rgba(255,91,214,.14), transparent 55%);
+      filter: blur(10px);
+      opacity:.8;
+      pointer-events:none;
+    }
+    .card > *{ position:relative; transform: translateZ(18px); }
+    .card h3{ margin:0 0 6px; font-size:16px; }
+    .card p{ margin:0; color: var(--muted); font-size:13px; line-height:1.55; }
+    .pill{
+      display:inline-flex;
+      margin-top:12px;
+      gap:8px;
+      align-items:center;
+      padding:6px 10px;
+      border-radius:999px;
+      font-size:12px;
+      border:1px solid rgba(255,255,255,.14);
+      color: var(--text);
+      background: rgba(0,0,0,.18);
+    }
+    .pill i{
+      width:8px; height:8px; border-radius:999px;
+      background: var(--a);
+      box-shadow: 0 0 0 4px rgba(99,243,255,.12);
+    }
+
+    /* Reveal animation */
+    .reveal{
+      opacity:0;
+      transform: translateY(12px);
+      transition: opacity .7s ease, transform .7s ease;
+    }
+    .reveal.on{
+      opacity:1;
+      transform: translateY(0);
+    }
+
+    /* Footer strip */
+    .strip{
+      padding:14px 18px;
+      border-radius: var(--r);
+      border:1px solid rgba(255,255,255,.14);
+      background: rgba(255,255,255,.05);
+      color: var(--muted);
+      display:flex; justify-content:space-between; gap:12px; flex-wrap:wrap;
+      backdrop-filter: blur(12px);
+    }
+
+    /* Responsive */
+    @media (max-width: 980px){
+      .grid{ grid-template-columns: 1fr; }
+    }
+
+    /* Reduced motion */
+    @media (prefers-reduced-motion: reduce){
+      .aurora{ animation:none; }
+      .reveal{ transition:none; }
+      .btn{ transition:none; }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="aurora"></div>
+  <div class="noise"></div>
+  <canvas id="particles"></canvas>
+
+  <div class="wrap">
+    <header class="reveal">
+      <div class="top">
+        <div class="badge"><span class="dot"></span> Innovative UI • Single HTML • No libraries</div>
+        <div class="badge">Move mouse ✨ • Hover cards 🧊 • Click button 🚀</div>
+      </div>
+
+      <h1>Build a <span class="type" id="typeText"></span> experience.</h1>
+      <p class="sub">
+        This page uses <b>glassmorphism</b>, a <b>particle network</b>, <b>3D tilt cards</b>,
+        a <b>magnetic button</b>, and smooth <b>reveal animations</b> — all in one file.
+      </p>
+
+      <div class="actions">
+        <button class="btn" id="magBtn">
+          Launch Magic 🚀
+          <span class="shine"></span>
+        </button>
+        <button class="btn secondary" id="snapBtn">
+          Change Vibe 🎨
+          <span class="shine"></span>
+        </button>
+      </div>
+    </header>
+
+    <section class="grid">
+      <article class="card reveal tilt">
+        <h3>Mindblowing Visuals</h3>
+        <p>Animated aurora gradients + soft noise + glass layers for premium look.</p>
+        <span class="pill"><i></i> Aurora + Glass</span>
+      </article>
+
+      <article class="card reveal tilt">
+        <h3>Interactive Motion</h3>
+        <p>Cards tilt in 3D based on your mouse movement (smooth and modern).</p>
+        <span class="pill"><i></i> 3D Tilt</span>
+      </article>
+
+      <article class="card reveal tilt">
+        <h3>Particle Network</h3>
+        <p>Dynamic particles connect with lines — feels futuristic & “alive”.</p>
+        <span class="pill"><i></i> Canvas FX</span>
+      </article>
+    </section>
+
+    <div class="strip reveal">
+      <span>Tip: Replace text with your content (Project / Portfolio / Doc / Landing Page)</span>
+      <span id="status">Status: Ready ✅</span>
+    </div>
+  </div>
+
+  <script>
+    /* ------------------------------
+      TYPEWRITER (simple)
+    ------------------------------ */
+    const words = ["mind-blowing", "premium", "futuristic", "innovative"];
+    const el = document.getElementById("typeText");
+    let w=0, i=0, back=false;
+
+    function type(){
+      const word = words[w];
+      el.textContent = word.slice(0, i);
+      if(!back && i < word.length) i++;
+      else if(!back && i === word.length){ back=true; setTimeout(type, 900); return; }
+      else if(back && i > 0) i--;
+      else { back=false; w=(w+1)%words.length; }
+      setTimeout(type, back ? 50 : 70);
+    }
+    type();
+
+    /* ------------------------------
+      REVEAL ON SCROLL
+    ------------------------------ */
+    const revealEls = document.querySelectorAll(".reveal");
+    const io = new IntersectionObserver((entries)=>{
+      entries.forEach(e => { if(e.isIntersecting) e.target.classList.add("on"); });
+    }, { threshold: 0.12 });
+    revealEls.forEach(x => io.observe(x));
+
+    /* ------------------------------
+      3D TILT CARDS (no lib)
+    ------------------------------ */
+    const tilts = document.querySelectorAll(".tilt");
+    tilts.forEach(card=>{
+      card.addEventListener("mousemove", (e)=>{
+        const r = card.getBoundingClientRect();
+        const x = e.clientX - r.left;
+        const y = e.clientY - r.top;
+        const rx = ((y / r.height) - 0.5) * -10;
+        const ry = ((x / r.width) - 0.5) * 12;
+        card.style.transform = `perspective(800px) rotateX(${rx}deg) rotateY(${ry}deg) scale(1.02)`;
+      });
+      card.addEventListener("mouseleave", ()=>{
+        card.style.transform = "perspective(800px) rotateX(0deg) rotateY(0deg) scale(1)";
+      });
+    });
+
+    /* ------------------------------
+      MAGNETIC BUTTON + SHINE
+    ------------------------------ */
+    const magBtn = document.getElementById("magBtn");
+    const snapBtn = document.getElementById("snapBtn");
+    const status = document.getElementById("status");
+
+    function shine(btn, e){
+      const r = btn.getBoundingClientRect();
+      const mx = ((e.clientX - r.left) / r.width) * 100;
+      const my = ((e.clientY - r.top) / r.height) * 100;
+      btn.style.setProperty("--mx", mx + "%");
+      btn.style.setProperty("--my", my + "%");
+    }
+
+    function magnetic(btn){
+      btn.addEventListener("mousemove", (e)=>{
+        shine(btn, e);
+        const r = btn.getBoundingClientRect();
+        const dx = (e.clientX - (r.left + r.width/2)) / 12;
+        const dy = (e.clientY - (r.top + r.height/2)) / 12;
+        btn.style.transform = `translate(${dx}px, ${dy}px)`;
+      });
+      btn.addEventListener("mouseleave", ()=>{
+        btn.style.transform = "translate(0px,0px)";
+      });
+    }
+    magnetic(magBtn);
+    magnetic(snapBtn);
+
+    magBtn.addEventListener("click", ()=>{
+      status.textContent = "Status: Magic launched 🚀✨";
+      setTimeout(()=> status.textContent = "Status: Ready ✅", 1400);
+      // little burst effect by briefly increasing particle speed
+      burst();
+    });
+
+    snapBtn.addEventListener("click", ()=>{
+      // swap particle theme hue
+      hue = (hue + 55) % 360;
+      status.textContent = "Status: Vibe changed 🎨";
+      setTimeout(()=> status.textContent = "Status: Ready ✅", 1200);
+    });
+
+    /* ------------------------------
+      PARTICLE NETWORK (canvas)
+    ------------------------------ */
+    const c = document.getElementById("particles");
+    const ctx = c.getContext("2d", { alpha: true });
+
+    let W, H, DPR;
+    function resize(){
+      DPR = Math.min(2, window.devicePixelRatio || 1);
+      W = c.width = Math.floor(innerWidth * DPR);
+      H = c.height = Math.floor(innerHeight * DPR);
+      c.style.width = innerWidth + "px";
+      c.style.height = innerHeight + "px";
+    }
+    addEventListener("resize", resize);
+    resize();
+
+    let hue = 195;
+    const N = Math.min(110, Math.floor(innerWidth / 12));
+    const pts = [];
+    const rnd = (a,b)=> a + Math.random()*(b-a);
+
+    for(let i=0;i<N;i++){
+      pts.push({
+        x: rnd(0,W), y: rnd(0,H),
+        vx: rnd(-.35,.35) * DPR,
+        vy: rnd(-.35,.35) * DPR,
+        r: rnd(1.2, 2.4) * DPR
+      });
+    }
+
+    let speedBoost = 1;
+    function burst(){
+      speedBoost = 2.4;
+      setTimeout(()=> speedBoost = 1, 600);
+    }
+
+    function draw(){
+      ctx.clearRect(0,0,W,H);
+
+      // particles
+      for(const p of pts){
+        p.x += p.vx * speedBoost;
+        p.y += p.vy * speedBoost;
+
+        if(p.x < 0 || p.x > W) p.vx *= -1;
+        if(p.y < 0 || p.y > H) p.vy *= -1;
+
+        ctx.beginPath();
+        ctx.fillStyle = `hsla(${hue}, 95%, 70%, .7)`;
+        ctx.arc(p.x, p.y, p.r, 0, Math.PI*2);
+        ctx.fill();
+      }
+
+      // connections
+      for(let i=0;i<pts.length;i++){
+        for(let j=i+1;j<pts.length;j++){
+          const a = pts[i], b = pts[j];
+          const dx = a.x-b.x, dy = a.y-b.y;
+          const d = Math.sqrt(dx*dx + dy*dy);
+          const max = 130 * DPR;
+          if(d < max){
+            const alpha = (1 - d/max) * 0.35;
+            ctx.strokeStyle = `hsla(${hue+30}, 95%, 70%, ${alpha})`;
+            ctx.lineWidth = 1 * DPR;
+            ctx.beginPath();
+            ctx.moveTo(a.x, a.y);
+            ctx.lineTo(b.x, b.y);
+            ctx.stroke();
+          }
+        }
+      }
+
+      requestAnimationFrame(draw);
+    }
+    draw();
+  </script>
+</body>
+</html>
