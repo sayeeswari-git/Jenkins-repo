@@ -10,7 +10,7 @@ pipeline {
         stage('Checkout Ansible Repo') {
             steps {
                 git branch: 'main',
-                    credentialsId: 'github-classic-id',
+                    credentialsId: 'git-id',
                     url: 'https://github.com/sayeeswari-git/Jenkins-repo.git'
             }
         }
@@ -19,7 +19,7 @@ pipeline {
             steps {
                 dir('web-src') {
                     git branch: 'main',
-                        credentialsId: 'github-classic-id',
+                        credentialsId: 'git-id',
                         url: 'https://github.com/sayeeswari-git/jenkins-repo2.git'
                 }
             }
@@ -28,7 +28,7 @@ pipeline {
         stage('Deploy with Ansible') {
             steps {
                 withCredentials([sshUserPrivateKey(
-                    credentialsId: 'vm2-deploy-key',
+                    credentialsId: 'webhost-vm',
                     keyFileVariable: 'SSH_KEY'
                 )]) {
  
@@ -50,3 +50,4 @@ pipeline {
     }
 
 }
+
